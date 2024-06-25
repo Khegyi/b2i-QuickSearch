@@ -1,9 +1,9 @@
 "use client"; // This is a client-side component
-import React, { useState } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
 
-// Todo move this to a .env file
+// Todo: move to .env
 const apiKey =
   "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTbm93IE93bCIsInN1YiI6ImF1dGgwfDY2Nzk3ZWVmZTJkZGQ4YmIxMjYyOWUzMSIsImlhdCI6MTcxOTIzODQ4MCwiZXhwIjoxNzIwNDQ4MDgwLCJwZXJtaXNzaW9ucyI6WyJicm93c2U6KiJdfQ.HgdlFaEiXqcfR47DSx7tZM-ZalMcVfBPi7sXPbFQ1jYbvaWyvNZWpZti4JTTNaYuPRz8ioN58uUQ4hSKF3Hcfg";
 
@@ -14,6 +14,9 @@ interface SearchResult {
     id: string;
     term: string;
   };
+}
+interface QuickSearchProps {
+  setSelectedConcept: Dispatch<SetStateAction<any>>;
 }
 
 const highlightTerm = (text: string, highlight: string) => {
@@ -31,31 +34,27 @@ const highlightTerm = (text: string, highlight: string) => {
   );
 };
 
-const QuickSearch = () => {
+const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(
-    null
-  );
   const [maxResults, setMaxResults] = useState<number>(5);
   const [displayResults, setDisplayResults] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string|null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSelect = (result: SearchResult) => {
-    setSelectedResult(result);
+    setSelectedConcept(result.pt);
     setDisplayResults(false);
   };
 
   function checkSearchTerm() {
     if (searchTerm.length < 3) {
-      setErrorMessage("Search term must be at least 3 characters");
+      setErrorMessage("Search term must be at least 3 letters");
       return false;
     }
     setErrorMessage(null);
     return true;
   }
-
 
   async function getSearchResults() {
     setDisplayResults(false);
@@ -72,16 +71,24 @@ const QuickSearch = () => {
       }
     );
     setSearchResults(request.data.items);
-    request.data.items.length > 0
-      ? setDisplayResults(true)
-      : setDisplayResults(false);
+    if (request.data.items.length > 0) {
+      setDisplayResults(true);
+    } else {
+      setErrorMessage("No results found");
+      setDisplayResults(false);
+    }
     setLoading(false);
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    displayResults && setDisplayResults(false);
+    setSearchTerm(e.target.value);
   }
 
   return (
     <div style={{ position: "relative", width: "300px" }}>
       <div style={{ marginBottom: "20px" }}>
-        <label htmlFor="max-results">Max Results: {maxResults}</label>
+        <label htmlFor="max-results">Result Number: {maxResults}</label>
         <input
           type="range"
           id="max-results"
@@ -90,7 +97,7 @@ const QuickSearch = () => {
           max="100"
           value={maxResults}
           onChange={(e) => setMaxResults(parseInt(e.target.value))}
-          style={{ width: "100%" }}
+          className="w-full"
         />
       </div>
       <div style={{ marginBottom: "20px", position: "relative" }}>
@@ -99,59 +106,46 @@ const QuickSearch = () => {
           placeholder="Search"
           value={searchTerm}
           disabled={loading}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => handleInputChange(e)}
           onKeyDown={(e) => e.key === "Enter" && getSearchResults()}
-          style={{
-            width: "100%",
-            padding: "10px",
-            boxSizing: "border-box",
-            color: "black",
-          }}
+          className="w-full p-2.5 box-border text-black"
         />
-        <button
-          onClick={getSearchResults}
-          disabled={loading}
-          style={{
-            padding: "5px",
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-          }}
-        >
-          <Image
-            className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70]"
-            src="/search_icon.svg"
-            alt="Search"
-            title="Search"
-            width={15}
-            height={15}
-            priority
-          />
-        </button>
-        {errorMessage && <div style={{color: "red"}}>{errorMessage}</div>}
-
-        {displayResults && (
+        {loading ? (
           <div
-            style={{
-              border: "1px solid #ccc",
-              backgroundColor: "white",
-              position: "absolute",
-              width: "100%",
-              maxHeight: "50vh",
-              overflowY: "auto",
-              zIndex: 1,
-            }}
+            className="absolute top-4 right-4 inline-block h-4 w-4 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white"
+            role="status"
           >
+            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+              Loading...
+            </span>
+          </div>
+        ) : (
+          <button
+            onClick={getSearchResults}
+            disabled={loading}
+            className="absolute top-4 right-4 p-1.25"
+          >
+            <Image
+              className="relative animate-wiggle dark:drop-shadow-[0_0_0.3rem_#ffffff70]"
+              src="/search_icon.svg"
+              alt="Search"
+              title="Search"
+              width={15}
+              height={15}
+              priority
+            />
+          </button>
+        )}
+        {errorMessage && (
+          <div className="text-white mt-1 p-1 text-md rounded bg-orange-500">{errorMessage}</div>
+        )}
+        {displayResults && (
+          <div className="absolute w-full max-h-[50vh] overflow-y-auto border border-gray-300 bg-white z-10">
             {searchResults.map((result) => (
               <div
                 key={result.id}
                 onClick={() => handleSelect(result)}
-                style={{
-                  padding: "10px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #eee",
-                  color: "black",
-                }}
+                className="p-2.5 cursor-pointer border-b border-gray-200 text-black hover:bg-gray-100"
               >
                 {highlightTerm(result.pt.term, searchTerm)}
               </div>
@@ -159,13 +153,6 @@ const QuickSearch = () => {
           </div>
         )}
       </div>
-
-      {selectedResult && (
-        <div style={{ marginTop: "20px", color: "white" }}>
-          <strong>Selected:</strong> {selectedResult?.id} |{" "}
-          {selectedResult?.pt.term}
-        </div>
-      )}
     </div>
   );
 };
