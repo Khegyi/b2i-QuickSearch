@@ -35,7 +35,7 @@ const highlightTerm = (text: string, highlight: string) => {
 };
 
 const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [maxResults, setMaxResults] = useState<number>(5);
   const [displayResults, setDisplayResults] = useState<boolean>(false);
@@ -47,7 +47,7 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
     setDisplayResults(false);
   };
 
-  function checkSearchTerm() {
+  function checkSearchTermLength() {
     if (searchTerm.length < 3) {
       setErrorMessage("Search term must be at least 3 letters");
       return false;
@@ -59,7 +59,7 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
   async function getSearchResults() {
     setDisplayResults(false);
 
-    if (!checkSearchTerm()) return;
+    if (!checkSearchTermLength()) return;
     setLoading(true);
     const request = await axios.get(
       `https://api.snowray.app/snowowl/snomedct/SNOMEDCT/concepts?term=${searchTerm}&limit=${maxResults}&expand=pt()`,
@@ -86,8 +86,8 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
   }
 
   return (
-    <div style={{ position: "relative", width: "300px" }}>
-      <div style={{ marginBottom: "20px" }}>
+    <div className="relative w-72">
+      <div className="mb-5">
         <label htmlFor="max-results">Result Number: {maxResults}</label>
         <input
           type="range"
@@ -100,7 +100,7 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
           className="w-full"
         />
       </div>
-      <div style={{ marginBottom: "20px", position: "relative" }}>
+      <div className="mb-5 relative">
         <input
           type="text"
           placeholder="Search"
@@ -114,11 +114,7 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
           <div
             className="absolute top-4 right-4 inline-block h-4 w-4 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white"
             role="status"
-          >
-            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-              Loading...
-            </span>
-          </div>
+          ></div>
         ) : (
           <button
             onClick={getSearchResults}
@@ -126,7 +122,7 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
             className="absolute top-4 right-4 p-1.25"
           >
             <Image
-              className="relative animate-wiggle dark:drop-shadow-[0_0_0.3rem_#ffffff70]"
+              className="relative animate-wiggle"
               src="/search_icon.svg"
               alt="Search"
               title="Search"
@@ -137,7 +133,9 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
           </button>
         )}
         {errorMessage && (
-          <div className="text-white mt-1 p-1 text-md rounded bg-orange-500">{errorMessage}</div>
+          <div className="text-white mt-1 p-1 text-md rounded bg-orange-500">
+            {errorMessage}
+          </div>
         )}
         {displayResults && (
           <div className="absolute w-full max-h-[50vh] overflow-y-auto border border-gray-300 bg-white z-10">
