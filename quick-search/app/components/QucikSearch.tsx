@@ -2,10 +2,12 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
+import { highlightTerm } from "../utils/Utils";
 
 // Todo: move to .env
 const apiKey =
   "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTbm93IE93bCIsInN1YiI6ImF1dGgwfDY2Nzk3ZWVmZTJkZGQ4YmIxMjYyOWUzMSIsImlhdCI6MTcxOTIzODQ4MCwiZXhwIjoxNzIwNDQ4MDgwLCJwZXJtaXNzaW9ucyI6WyJicm93c2U6KiJdfQ.HgdlFaEiXqcfR47DSx7tZM-ZalMcVfBPi7sXPbFQ1jYbvaWyvNZWpZti4JTTNaYuPRz8ioN58uUQ4hSKF3Hcfg";
+const apiUrl = "https://api.snowray.app/snowowl/snomedct/SNOMEDCT/concepts";
 
 interface SearchResult {
   id: number;
@@ -19,21 +21,6 @@ interface QuickSearchProps {
   setSelectedConcept: Dispatch<SetStateAction<any>>;
 }
 
-const highlightTerm = (text: string, highlight: string) => {
-  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
-  return (
-    <span>
-      {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <b key={i}>{part}</b>
-        ) : (
-          part
-        )
-      )}
-    </span>
-  );
-};
-
 const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -42,27 +29,13 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSelect = (result: SearchResult) => {
-    setSelectedConcept(result.pt);
-    setDisplayResults(false);
-  };
-
-  function checkSearchTermLength() {
-    if (searchTerm.length < 3) {
-      setErrorMessage("Search term must be at least 3 letters");
-      return false;
-    }
-    setErrorMessage(null);
-    return true;
-  }
-
   async function getSearchResults() {
     setDisplayResults(false);
 
     if (!checkSearchTermLength()) return;
     setLoading(true);
     const request = await axios.get(
-      `https://api.snowray.app/snowowl/snomedct/SNOMEDCT/concepts?term=${searchTerm}&limit=${maxResults}&expand=pt()`,
+      `${apiUrl}?term=${searchTerm}&limit=${maxResults}&expand=pt()`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -78,6 +51,20 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
       setDisplayResults(false);
     }
     setLoading(false);
+  }
+
+  function handleSelect(result: SearchResult) {
+    setSelectedConcept(result.pt);
+    setDisplayResults(false);
+  };
+
+  function checkSearchTermLength() {
+    if (searchTerm.length < 3) {
+      setErrorMessage("Search term must be at least 3 letters");
+      return false;
+    }
+    setErrorMessage(null);
+    return true;
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -128,7 +115,6 @@ const QuickSearch: React.FC<QuickSearchProps> = ({ setSelectedConcept }) => {
               title="Search"
               width={15}
               height={15}
-              priority
             />
           </button>
         )}

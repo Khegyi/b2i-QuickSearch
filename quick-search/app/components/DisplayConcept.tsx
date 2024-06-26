@@ -10,7 +10,7 @@ const DisplayConcept: React.FC<DisplayConceptProps> = ({ selectedConcept }) => {
       <span>Selected Concept:</span>
       <div>
         {selectedConcept !== null
-          ? selectedConcept?.id + " | " + selectedConcept?.term
+          ? selectedConcept?.id + " | " + selectedConcept?.term + " | "
           : "None"}{" "}
       </div>
     </div>
